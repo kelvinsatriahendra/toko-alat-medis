@@ -81,8 +81,8 @@ if(isset($_POST['submit1'])){
 							$no++;
 						}
 					}
-					 ?>
-					 
+					?>
+
 						<tr>
 							<td colspan="7" style="text-align: right; font-weight: bold;">Grand Total = Rp.<?= number_format($hasil); ?></td>
 						</tr>
