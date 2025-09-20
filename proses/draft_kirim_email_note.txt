@@ -1,0 +1,88 @@
+<?php
+// TAMPILKAN ERROR SAAT DEV
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+require '../vendor/autoload.php';
+require 'nota_template.php';
+include '../koneksi/koneksi.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMPT;
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
+use Dompdf\Dompdf;
+
+// 1) Validasi invoice
+if (!isset($_GET['invoice'])) {
+    die("Error: Nomor invoice tidak ditemukan.");
+}
+$invoice_id = mysqli_real_escape_string($conn, $_GET['invoice']);
+
+// 2) Ambil email pembeli
+$q = mysqli_query($conn, "SELECT email_pembeli FROM pesanan WHERE invoice = '$invoice_id' LIMIT 1");
+if (!$q || mysqli_num_rows($q) === 0) {
+    die("Error: Data pesanan tidak ditemukan untuk invoice " . htmlspecialchars($invoice_id));
+}
+$email_pembeli = mysqli_fetch_assoc($q)['email_pembeli'];
+
+try {
+    // 3) Render HTML nota → PDF
+    $html_content = getInvoiceHTML($invoice_id, $conn);
+
+    $dompdf = new Dompdf();
+    $dompdf->loadHtml($html_content);
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+    $pdf_output = $dompdf->output();
+
+    // 4) Kirim email via Gmail SMTP
+    $mail = new PHPMailer(true);
+    $mail->isSMTP();
+    $mail->Host       = 'smtp.gmail.com';
+    $mail->SMTPAuth   = true;
+
+    // >>>> JANGAN HARD-CODE. SET DI ENV / .env
+    // Contoh di Windows (Laragon): setx GMAIL_USER "alamat@gmail.com" dan setx GMAIL_APP_PASS "abcd efgh ijkl mnop"
+    $gmailUser  = getenv('GMAIL_USER');
+    $gmailPass  = getenv('GMAIL_APP_PASS');
+
+    if (!$gmailUser || !$gmailPass) {
+        throw new Exception('Kredensial SMTP belum di-set di environment variables (GMAIL_USER / GMAIL_APP_PASS).');
+    }
+
+    $mail->Username   = $gmailUser;      // harus sama dengan setFrom
+    $mail->Password   = $gmailPass;      // ini App Password 16 digit
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->Port       = 587;
+
+    // Penting: From HARUS alamat Gmail yang login
+    $mail->setFrom($gmailUser, 'Prima Medical Store');
+    // Balasan masuk ke email domain toko (optional)
+    $mail->addReplyTo('support@primamedical.com', 'Prima Medical Store');
+
+    $mail->addAddress($email_pembeli);
+
+    // Lampiran PDF
+    $mail->addStringAttachment($pdf_output, 'Invoice-' . $invoice_id . '.pdf');
+
+    // Konten email
+    $mail->isHTML(true);
+    $mail->Subject = 'Invoice Pembelian - ' . $invoice_id;
+    $mail->Body    = 'Halo,<br><br>Terima kasih telah berbelanja di Prima Medical Store. '
+        . 'Terlampir nota untuk pesanan Anda.<br><br>Salam,<br>Prima Medical Store';
+
+    $mail->send();
+
+    echo "<script>
+        alert('Email nota berhasil dikirim ke " . addslashes($email_pembeli) . "');
+        window.location.href = 'nota.php?invoice=" . addslashes($invoice_id) . "';
+    </script>";
+} catch (PHPMailerException $e) {
+    // Error dari PHPMailer
+    $msg = 'PHPMailer error: ' . $e->getMessage();
+    echo "<script>alert('Gagal mengirim email. $msg'); window.history.back();</script>";
+} catch (Exception $e) {
+    // Error lain
+    $msg = 'Error: ' . $e->getMessage();
+    echo "<script>alert('Gagal mengirim email. $msg'); window.history.back();</script>";
+}

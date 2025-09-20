@@ -355,6 +355,18 @@ while ($row = mysqli_fetch_assoc($query)) {
         transform: translateY(-2px);
     }
 
+    .btn-email {
+        background-color: #ffc107;
+        /* Warna kuning */
+        color: #000;
+    }
+
+    .btn-email:hover {
+        background-color: #e0a800;
+        border-color: #e0a800;
+        color: #000;
+    }
+
     /* Pengaturan untuk mode cetak/print */
     @media print {
         body {
@@ -461,7 +473,9 @@ while ($row = mysqli_fetch_assoc($query)) {
             </div>
             <div class="actions">
                 <a href="../selesai.php" class="btn">Selesai</a>
+                <a href="kirim_email_nota.php?invoice=<?= htmlspecialchars($invoice_id); ?>" class="btn btn-email">Kirim Email</a>
                 <button onclick="window.print()" class="btn">Print Nota</button>
+
             </div>
         <?php else : ?>
             <div class="header">

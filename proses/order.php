@@ -15,6 +15,10 @@ include '../koneksi/koneksi.php';
 // $tanggal = date('Y-m-d');
 // $payment_method = $_POST['payment_method'];
 // $email_pembeli = $_POST['email'];
+
+// SAMPE SINII
+
+
 $kd_cs = mysqli_real_escape_string($conn, $_POST['kode_cs']);
 $prov = mysqli_real_escape_string($conn, $_POST['prov']);
 $kota = mysqli_real_escape_string($conn, $_POST['kota']);
@@ -63,14 +67,14 @@ try {
         // 4b. Insert ke tabel pesanan
         $query_order = "INSERT INTO pesanan (invoice, email_pembeli, kode_customer, kode_produk, nama_produk, qty, harga, status, tanggal, provinsi, kota, alamat, kode_pos, terima, tolak, cek) 
                         VALUES ('$format_invoice', '$email_pembeli', '$kd_cs', '$kd_produk', '$nama_produk', '$qty', '$harga', '$status', '$tanggal', '$prov', '$kota', '$alamat', '$kopos', '0', '0', '0')";
-        
+
         if (!mysqli_query($conn, $query_order)) {
             throw new Exception("Gagal menyimpan data pesanan: " . mysqli_error($conn));
         }
 
-        // 4c. Kurangi stok di tabel 'produk' (INI PERBAIKANNYA)
+        // 4c. Kurangi stok di tabel 'produk'
         $query_update_stok = "UPDATE produk SET jumlah_stok = jumlah_stok - $qty WHERE kode_produk = '$kd_produk'";
-        
+
         if (!mysqli_query($conn, $query_update_stok)) {
             throw new Exception("Gagal memperbarui stok produk: " . mysqli_error($conn));
         }
@@ -89,13 +93,12 @@ try {
     // 6. Redirect ke halaman nota
     header("Location: nota.php?invoice=" . $format_invoice);
     exit();
-
 } catch (Exception $e) {
     // ==================================================================
     // == Jika ada satu saja kesalahan, batalkan semua perubahan ==
     // ==================================================================
     mysqli_rollback($conn);
-    
+
     // Tampilkan pesan error dan redirect kembali ke keranjang
     echo "<script>
         alert('Terjadi kesalahan: " . addslashes($e->getMessage()) . "');
@@ -106,7 +109,7 @@ try {
 ?>
 
 
-// --- PERBATASAN ---
+<!-- // --- PERBATASAN --- -->
 
 
 <!-- // Generate nomor invoice baru

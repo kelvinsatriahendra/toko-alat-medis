@@ -109,7 +109,7 @@ include 'header.php';
                 </thead>
                 <tbody>
                     <?php
-                    $result = mysqli_query($conn, "SELECT * FROM produk ORDER BY nama ASC");
+                    $result = mysqli_query($conn, "SELECT * FROM produk ORDER BY kode_produk ASC, nama ASC");
                     $no = 1;
 
                     if ($result && mysqli_num_rows($result) > 0) {
